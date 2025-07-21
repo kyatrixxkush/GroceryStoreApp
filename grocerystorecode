@@ -1,0 +1,97 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+class GroceryItem
+{
+    public string ID;
+    public string Name;
+    public int Quantity;
+    public double Price;
+    public double Total => Quantity * Price;
+}
+
+class Program
+{
+    const double VAT_RATE = 0.16;
+
+    static void Main()
+    {
+        List<GroceryItem> items = new List<GroceryItem>();
+        string filePath = "items.txt"; 
+
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine("File not found.");
+            return;
+        }
+
+        ReadItemsFromFile(filePath, ref items);
+        double subTotal = CalculateSubTotal(items);
+        double tax = subTotal * VAT_RATE;
+        double grandTotal = subTotal + tax;
+
+        PrintReceipt(items, subTotal, tax, grandTotal);
+        WriteToFile(items, subTotal, tax, grandTotal);
+    }
+
+    static void ReadItemsFromFile(string path, ref List<GroceryItem> items)
+    {
+        string[] lines = File.ReadAllLines(path);
+        foreach (var line in lines)
+        {
+            string[] parts = line.Split(',');
+            if (parts.Length == 4)
+            {
+                items.Add(new GroceryItem
+                {
+                    ID = parts[0],
+                    Name = parts[1],
+                    Quantity = int.Parse(parts[2]),
+                    Price = double.Parse(parts[3])
+                });
+            }
+        }
+    }
+
+    static double CalculateSubTotal(List<GroceryItem> items)
+    {
+        double total = 0;
+        foreach (var item in items)
+            total += item.Total;
+        return total;
+    }
+
+    static void PrintReceipt(List<GroceryItem> items, double subTotal, double tax, double grandTotal)
+    {
+        Console.WriteLine("\n------ SHOPPING RECEIPT ------");
+        Console.WriteLine("Item ID\tName\tQty\tPrice\tTotal");
+        foreach (var item in items)
+        {
+            Console.WriteLine($"{item.ID}\t{item.Name}\t{item.Quantity}\t{item.Price:F2}\t{item.Total:F2}");
+        }
+        Console.WriteLine("------------------------------");
+        Console.WriteLine($"Subtotal:\t{subTotal:F2}");
+        Console.WriteLine($"Tax (16%):\t{tax:F2}");
+        Console.WriteLine($"Grand Total:\t{grandTotal:F2}");
+        Console.WriteLine("------------------------------");
+    }
+
+    static void WriteToFile(List<GroceryItem> items, double subTotal, double tax, double grandTotal)
+    {
+        string outputPath = "receipt_output.txt";
+        using (StreamWriter writer = new StreamWriter(outputPath))
+        {
+            writer.WriteLine("Item ID\tName\tQty\tPrice\tTotal");
+            foreach (var item in items)
+            {
+                writer.WriteLine($"{item.ID}\t{item.Name}\t{item.Quantity}\t{item.Price:F2}\t{item.Total:F2}");
+            }
+            writer.WriteLine($"Subtotal:\t{subTotal:F2}");
+            writer.WriteLine($"Tax (16%):\t{tax:F2}");
+            writer.WriteLine($"Grand Total:\t{grandTotal:F2}");
+        }
+
+        Console.WriteLine($"\nReceipt written to '{outputPath}' successfully.");
+    }
+}
